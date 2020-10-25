@@ -48,18 +48,20 @@ describe "ClamAV::Client Integration Tests" do
       let(:dir) { File.join(base_path, 'test/fixtures') }
 
       it "can be started" do
-        results = client.execute(ClamAV::Commands::ScanCommand.new(dir))
+        if !(ENV['CLAMD_TCP_HOST'])
+          results = client.execute(ClamAV::Commands::ScanCommand.new(dir))
 
-        expected_results = {
-          "#{base_path}/test/fixtures/clamavtest.gz"  => ClamAV::VirusResponse,
-          "#{base_path}/test/fixtures/clamavtest.txt" => ClamAV::VirusResponse,
-          "#{base_path}/test/fixtures/clamavtest.zip" => ClamAV::VirusResponse,
-          "#{base_path}/test/fixtures/innocent.txt"   => ClamAV::SuccessResponse
-        }
+          expected_results = {
+            "#{base_path}/test/fixtures/clamavtest.gz"  => ClamAV::VirusResponse,
+            "#{base_path}/test/fixtures/clamavtest.txt" => ClamAV::VirusResponse,
+            "#{base_path}/test/fixtures/clamavtest.zip" => ClamAV::VirusResponse,
+            "#{base_path}/test/fixtures/innocent.txt"   => ClamAV::SuccessResponse
+          }
 
-        results.each do |result|
-          expected_result = expected_results[result.file]
-          assert_equal expected_result, result.class
+          results.each do |result|
+            expected_result = expected_results[result.file]
+            assert_equal expected_result, result.class
+          end
         end
       end
 
@@ -109,8 +111,14 @@ describe "ClamAV::Client Integration Tests" do
         refute client.safe?(dir)
       end
 
-      it 'returns true if all the give file is safe' do
-        assert client.safe?("#{dir}/innocent.txt")
+      if ENV['CLAMD_TCP_HOST'] && ENV['CLAMD_TCP_PORT']
+        it 'returns false' do
+          refute client.safe?("#{dir}/innocent.txt")
+        end
+      else
+        it 'returns true if all the give file is safe' do
+          assert client.safe?("#{dir}/innocent.txt")
+        end
       end
 
       def build_io_obj(file)

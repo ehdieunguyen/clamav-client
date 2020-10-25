@@ -33,6 +33,19 @@ jobs:
     <<: *shared
     environment:
       RUBY_VERSION=2.7-slim
+  "tcp-socket":
+    working_directory: ~/clamav-client
+    environment:
+      - CLAMD_TCP_HOST: 127.0.0.1
+      - CLAMD_TCP_PORT: 3310
+    docker:
+      - image: circleci/ruby:2.4
+      - image: mailu/clamav:1.7
+    steps:
+      - checkout
+      - run: bundle install --path=vendor/bundle
+      - run: ./test/wait-for-it.sh localhost:3310 -t 120
+      - run: bundle exec rake
 
 workflows:
   version: 2
@@ -42,3 +55,4 @@ workflows:
       - "2.5"
       - "2.6"
       - "2.7"
+      - "tcp-socket"
